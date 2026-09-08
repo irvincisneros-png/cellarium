@@ -1,0 +1,9 @@
+{
+  "categories": { "correctness": "error" },
+  "plugins": ["typescript", "react", "react-hooks"],
+  "rules": {
+    "no-unused-vars": "error",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
+  }
+}
