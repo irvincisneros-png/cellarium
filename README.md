@@ -57,3 +57,7 @@ Progress is stored in this browser's local storage, not synced across devices. C
 GitHub Pages serves the static Vite build. Relative asset URLs support repository-subpath hosting. The workflow runs type checking, lint, tests and build before deployment. The initial generated server scaffold was replaced with a static entry point because the requested destination is GitHub Pages; unused server packages were removed. No server runtime or credentials ship to the browser.
 
 The greenhouse and leaf-tissue backgrounds were generated with OpenAI ImageGen on 8 September 2026 specifically for this game. They provide artistic atmosphere, not authoritative microscopy. Cell and plant geometry, interface illustration and audio are authored for this project. Dependencies and bundled fonts retain their own licences.
+
+## Guided tutorial
+
+First-time players are offered a 12-step guided practice from the first chapter briefing. The Tutorial button in the header replays it at any time. Practice highlights the actual controls, requires the intended actions, and only runs time while building reserves or completing a growth job. It covers the plant/cell view, chloroplast development, Produce priority, resource costs, growth timing, independent cell reserves and the full harvest conditions. Completing or exiting restores the player's original campaign, view and speed; practice never replaces the campaign save or earns stars. A reload abandons practice and recovers the untouched campaign.

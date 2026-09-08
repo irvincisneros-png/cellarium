@@ -3164,3 +3164,176 @@ header {
 .cell-inspector .inspector-top {
   margin-bottom: 8px;
 }
+/* Guided practice keeps real controls usable and the reading clock stopped. */
+.tutorial-launch {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #f4e5b8;
+  border: 1px solid #f4e5b85c;
+  border-radius: 6px;
+  padding: 8px 11px;
+  font-size: 12px;
+  background: #153d2ebf;
+}
+.tutorial-coach {
+  position: fixed;
+  z-index: 7;
+  top: 91px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(360px, calc(100vw - 28px));
+  padding: 19px 21px;
+  background: #fff3d9;
+  color: #284432;
+  border: 1px solid #fff9e9;
+  border-radius: 12px;
+  box-shadow: 0 12px 50px #051e2550;
+}
+.tutorial-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  color: #60724f;
+}
+.tutorial-heading button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  letter-spacing: 0;
+  color: #52634b;
+  padding: 4px;
+}
+.tutorial-progress {
+  height: 3px;
+  margin: 10px 0 15px;
+  background: #bbc5a855;
+  border-radius: 5px;
+}
+.tutorial-progress i {
+  display: block;
+  height: 100%;
+  background: #638849;
+  border-radius: 5px;
+  transition: width 0.25s;
+}
+.tutorial-coach h2 {
+  font:
+    400 25px/1.2 Georgia,
+    serif;
+  letter-spacing: -0.4px;
+  margin: 0 0 10px;
+}
+.tutorial-coach p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+.tutorial-coach .primary {
+  background: #355c3c;
+  color: #fff4d5;
+  font-size: 13px;
+  margin-top: 15px;
+}
+.tutorial-instruction {
+  border-top: 1px solid #59794c33;
+  padding-top: 10px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: #516c43;
+}
+.tutorial-target {
+  outline: 3px solid #ffe592 !important;
+  outline-offset: 5px !important;
+  box-shadow:
+    0 0 0 9px #ffe59225,
+    0 0 26px #ffed9b90 !important;
+  position: relative;
+  z-index: 3;
+  animation: tutorial-beacon 1.8s ease-in-out infinite !important;
+}
+@keyframes tutorial-beacon {
+  50% {
+    outline-color: #fffbe2;
+    box-shadow:
+      0 0 0 12px #ffe59210,
+      0 0 34px #ffed9bb0;
+  }
+}
+@media (max-width: 1000px) {
+  .tutorial-coach {
+    width: 310px;
+    padding: 16px;
+    top: 80px;
+  }
+  .tutorial-coach h2 {
+    font-size: 22px;
+  }
+  .tutorial-coach p {
+    font-size: 13px;
+  }
+  .tutorial-launch {
+    font-size: 11px;
+    padding: 7px;
+  }
+  .header-right .save-state {
+    display: none;
+  }
+}
+@media (max-width: 540px) {
+  .tutorial-coach {
+    top: 77px;
+    width: calc(100vw - 24px);
+    padding: 14px 17px;
+  }
+  .tutorial-coach h2 {
+    font-size: 21px;
+    margin-bottom: 7px;
+  }
+  .tutorial-coach p {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .tutorial-progress {
+    margin: 6px 0 10px;
+  }
+  .tutorial-instruction {
+    font-size: 10px;
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+  .tutorial-launch {
+    font-size: 10px;
+    padding: 6px;
+    gap: 4px;
+  }
+  .tutorial-launch svg {
+    width: 12px;
+  }
+  .header-right {
+    gap: 5px;
+  }
+  header {
+    padding: 0 14px;
+  }
+  .brand span {
+    font-size: 13px;
+  }
+  .brand small {
+    font-size: 6px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-target {
+    animation: none !important;
+  }
+}
+@media (max-width: 540px) {
+  .tutorial-coach.tutorial-view-step {
+    top: 205px;
+  }
+}

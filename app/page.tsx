@@ -1,3 +1,8 @@
+import {
+  TUTORIAL,
+  nextTutorialStep,
+  tutorialAllows,
+} from '../lib/tutorial.mjs';
 import { useEffect, useRef, useState } from 'react';
 import {
   Leaf,
@@ -209,6 +214,15 @@ export default function Game() {
       return initialState();
     }
   });
+  const [tutorial, setTutorial] = useState<number | null>(null);
+  const practiceBackup = useRef<any>(null);
+  const [tutorialSeen, setTutorialSeen] = useState(() => {
+    try {
+      return localStorage.getItem('cellarium-tutorial-v1') === 'done';
+    } catch {
+      return false;
+    }
+  });
   const [progress, setProgress] = useState<Record<string, any>>(readProgress);
   const [view, setView] = useState<'plant' | 'cell'>('plant');
   const [screen, setScreen] = useState<'menu' | 'game'>('menu');
@@ -238,7 +252,9 @@ export default function Game() {
   const [toast, setToast] = useState('');
   const audio = useRef<Sound | null>(null);
   const live = useRef(s);
-  live.current = s;
+  live.current = practiceBackup.current?.world || s;
+  const visibleState = useRef(s);
+  visibleState.current = s;
   const previous = useRef(s);
   const actions = useRef<any>(null);
   const active =
@@ -268,7 +284,7 @@ export default function Game() {
     }
   }, [prefs]);
   useEffect(() => {
-    if (!active) return;
+    if (!active || (tutorial !== null && !TUTORIAL[tutorial].running)) return;
     const id = setInterval(
       () =>
         setS((p: any) => {
@@ -279,7 +295,7 @@ export default function Game() {
       250,
     );
     return () => clearInterval(id);
-  }, [active, speed]);
+  }, [active, speed, tutorial]);
   useEffect(() => {
     const save = () => {
       try {
@@ -336,13 +352,91 @@ export default function Game() {
     return () => clearTimeout(id);
   }, [toast]);
   function action(a: string, v?: string) {
-    if (!active || (s.event && a !== 'event')) return;
+    if (
+      !active ||
+      (s.event && a !== 'event') ||
+      !tutorialAllows(tutorial, a, v)
+    )
+      return;
     setS((p: any) => {
       const n = act(p, a, v);
       if (n !== p) audio.current?.fx(a === 'upgrade' ? 'upgrade' : 'click');
       return n;
     });
   }
+  function beginTutorial(fromBrief = false) {
+    if (tutorial !== null) return;
+    practiceBackup.current = {
+      world: structuredClone(s),
+      view,
+      screen: fromBrief ? 'game' : screen,
+      paused: fromBrief ? false : paused,
+      speed,
+    };
+    setS(initialState(0));
+    setView('plant');
+    setSelected('chloroplast');
+    setScreen('game');
+    setPaused(false);
+    setPanel(null);
+    setSpeed(1);
+    setTutorial(0);
+    void audio.current?.start();
+  }
+  function finishTutorial() {
+    const backup = practiceBackup.current;
+    if (backup) {
+      setS(backup.world);
+      setView(backup.view);
+      setScreen(backup.screen);
+      setPaused(backup.paused);
+      setSpeed(backup.speed);
+      live.current = backup.world;
+      previous.current = backup.world;
+    }
+    practiceBackup.current = null;
+    setTutorial(null);
+    setTutorialSeen(true);
+    try {
+      localStorage.setItem('cellarium-tutorial-v1', 'done');
+    } catch {
+      setSaveOK(false);
+    }
+  }
+  function chooseCell(i: number) {
+    if (tutorial !== null && !(tutorial === 7 && i === 1)) return;
+    setS((p: any) => act(p, 'select', String(i)));
+  }
+  function changeView(next: 'plant' | 'cell') {
+    if (
+      tutorial !== null &&
+      !(
+        (tutorial === 1 && next === 'cell') ||
+        (tutorial === 10 && next === 'plant')
+      )
+    )
+      return;
+    setView(next);
+  }
+  useEffect(() => {
+    if (tutorial === null || !active) return;
+    const next = nextTutorialStep(tutorial, s, view);
+    if (next !== tutorial) {
+      setTutorial(next);
+      audio.current?.fx('click');
+    }
+  }, [tutorial, s, view, active]);
+  useEffect(() => {
+    if (tutorial === null || !active) return;
+    const target = TUTORIAL[tutorial].target;
+    const el = target
+      ? document.querySelector<HTMLElement>(`[data-tutorial="${target}"]`)
+      : null;
+    el?.classList.add('tutorial-target');
+    if (el && window.innerWidth < 801)
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    return () => el?.classList.remove('tutorial-target');
+  }, [tutorial, active]);
   function launch(i: number) {
     if (i > 0 && !progress[i - 1]) return;
     setS(initialState(i));
@@ -409,9 +503,9 @@ export default function Game() {
               )
                 throw new Error('Expected an empty object');
               return {
-                scenario: LEVELS[live.current.level].name,
-                state: live.current,
-                goal: LEVELS[live.current.level].goal,
+                scenario: LEVELS[visibleState.current.level].name,
+                state: visibleState.current,
+                goal: LEVELS[visibleState.current.level].goal,
               };
             },
           },
@@ -449,6 +543,10 @@ export default function Game() {
         <button
           className="brand"
           onClick={() => {
+            if (tutorial !== null) {
+              finishTutorial();
+              return;
+            }
             setScreen('menu');
             setPaused(true);
           }}
@@ -460,6 +558,13 @@ export default function Game() {
           </span>
         </button>
         <div className="header-right">
+          <button
+            className="tutorial-launch"
+            disabled={tutorial !== null}
+            onClick={() => beginTutorial()}
+          >
+            <BookOpen size={15} /> Tutorial
+          </button>
           <span className="save-state">
             {saveOK
               ? 'Progress saved on this device'
@@ -488,8 +593,8 @@ export default function Game() {
           day={screen === 'menu' || day}
           selected={s.selectedCell}
           onSelect={(i) => {
-            setS((p: any) => act(p, 'select', String(i)));
-            setView('cell');
+            chooseCell(i);
+            changeView('cell');
           }}
           reduced={prefs.reduced}
           resetKey={resetKey}
@@ -500,7 +605,9 @@ export default function Game() {
           <div className="micro-world">
             <CellScene
               selected={selected}
-              onSelect={(p) => setSelected(p as keyof typeof PARTS)}
+              onSelect={(p) => {
+                if (tutorial === null) setSelected(p as keyof typeof PARTS);
+              }}
               water={s.water}
               growth={s.cells[s.selectedCell].growth}
               daylight={day}
@@ -542,13 +649,15 @@ export default function Game() {
             <div className="view-toggle">
               <button
                 className={view === 'plant' ? 'active' : ''}
-                onClick={() => setView('plant')}
+                data-tutorial="plant-view"
+                onClick={() => changeView('plant')}
               >
                 <Sprout size={16} /> Plant
               </button>
               <button
                 className={view === 'cell' ? 'active' : ''}
-                onClick={() => setView('cell')}
+                data-tutorial="cell-view"
+                onClick={() => changeView('cell')}
               >
                 <Hexagon size={16} /> Cell
               </button>
@@ -630,7 +739,7 @@ export default function Game() {
                     ? 'Flowers are forming. Keep your cells thriving.'
                     : 'The fruit is ripening. Your harvest is close.'}
             </p>
-            <button onClick={() => setView('cell')}>
+            <button onClick={() => changeView('cell')}>
               Enter {CELLS[s.selectedCell].name.toLowerCase()} cell{' '}
               <ArrowUpRight size={17} />
             </button>
@@ -645,7 +754,7 @@ export default function Game() {
               <button
                 className="text-icon"
                 aria-label="Return to plant"
-                onClick={() => setView('plant')}
+                onClick={() => changeView('plant')}
               >
                 <X size={17} />
               </button>
@@ -678,6 +787,7 @@ export default function Game() {
                 <p>{part.effect}</p>
                 <button
                   className="secondary full"
+                  data-tutorial="upgrade"
                   disabled={
                     s.upgrades[selected] >= 3 ||
                     s.sugar < cost!.sugar ||
@@ -743,9 +853,10 @@ export default function Game() {
             {CELLS.map((c, i) => (
               <button
                 key={c.name}
+                data-tutorial={i === 1 ? 'sheltered' : undefined}
                 className={s.selectedCell === i ? 'selected' : ''}
                 onClick={() => {
-                  setS((p: any) => act(p, 'select', String(i)));
+                  chooseCell(i);
                   audio.current?.fx('click');
                 }}
               >
@@ -777,7 +888,10 @@ export default function Game() {
                   key={id}
                   aria-pressed={selected === id}
                   className={selected === id ? 'selected' : ''}
-                  onClick={() => setSelected(id as keyof typeof PARTS)}
+                  onClick={() => {
+                    if (tutorial === null)
+                      setSelected(id as keyof typeof PARTS);
+                  }}
                 >
                   <i style={{ background: p.color }} />
                   {p.name}
@@ -786,7 +900,7 @@ export default function Game() {
             </nav>
           )}
           <section className="resource-dock">
-            <div className="dock-resources">
+            <div className="dock-resources" data-tutorial="resources">
               {(['water', 'sugar', 'energy'] as const).map((k) => {
                 const Icon = resourceIcons[k];
                 return (
@@ -819,6 +933,7 @@ export default function Game() {
                 ].map(([v, label]) => (
                   <button
                     key={v}
+                    data-tutorial={v === 'produce' ? 'produce' : undefined}
                     aria-pressed={s.focus === v}
                     className={s.focus === v ? 'chosen' : ''}
                     onClick={() => action('focus', v)}
@@ -830,6 +945,7 @@ export default function Game() {
             </div>
             <button
               className="primary grow"
+              data-tutorial="grow"
               disabled={!canGrow(s)}
               onClick={() => action('grow')}
             >
@@ -1024,11 +1140,18 @@ export default function Game() {
           <button
             className="primary full"
             onClick={() => {
+              if (!tutorialSeen && s.level === 0) {
+                beginTutorial(true);
+                return;
+              }
               setPanel(null);
               void audio.current?.start();
             }}
           >
-            Bring it to life <ArrowRight size={18} />
+            {!tutorialSeen && s.level === 0
+              ? 'Start guided tutorial'
+              : 'Bring it to life'}{' '}
+            <ArrowRight size={18} />
           </button>
           <p className="small-note">
             Time bonus: finish by {Math.floor(level.bonusTime / 60)}:
@@ -1155,7 +1278,7 @@ export default function Game() {
           >
             Preview sound effect
           </button>
-          {screen === 'game' && (
+          {screen === 'game' && tutorial === null && (
             <button
               className="text-button danger-text"
               onClick={() => setPanel('restart')}
@@ -1210,7 +1333,13 @@ export default function Game() {
           >
             <Play size={17} /> Resume
           </button>
-          <button className="secondary full" onClick={() => setScreen('menu')}>
+          <button
+            className="secondary full"
+            onClick={() => {
+              if (tutorial !== null) finishTutorial();
+              setScreen('menu');
+            }}
+          >
             Back to chapters
           </button>
           <button className="text-button" onClick={() => setPanel('settings')}>
@@ -1300,7 +1429,13 @@ export default function Game() {
             {s.level < 3 ? 'Explore the next chapter' : 'View your garden'}
             <ArrowRight size={18} />
           </button>
-          <button className="text-button" onClick={() => setScreen('menu')}>
+          <button
+            className="text-button"
+            onClick={() => {
+              if (tutorial !== null) finishTutorial();
+              setScreen('menu');
+            }}
+          >
             Back to chapters
           </button>
           <p className="small-note">
@@ -1336,10 +1471,56 @@ export default function Game() {
           <button className="primary full" onClick={() => launch(s.level)}>
             Try again <RotateCcw size={18} />
           </button>
-          <button className="secondary full" onClick={() => setScreen('menu')}>
+          <button
+            className="secondary full"
+            onClick={() => {
+              if (tutorial !== null) finishTutorial();
+              setScreen('menu');
+            }}
+          >
             Back to chapters
           </button>
         </Modal>
+      )}
+      {tutorial !== null && active && !s.event && (
+        <section
+          className={`tutorial-coach ${[1, 10].includes(tutorial) ? 'tutorial-view-step' : ''}`}
+          role="region"
+          aria-label="Guided tutorial"
+        >
+          <div className="tutorial-heading">
+            <span>
+              PRACTICE · {tutorial + 1} / {TUTORIAL.length}
+            </span>
+            <button onClick={finishTutorial} aria-label="Exit tutorial">
+              Exit practice <X size={13} />
+            </button>
+          </div>
+          <div className="tutorial-progress">
+            <i
+              style={{ width: `${((tutorial + 1) / TUTORIAL.length) * 100}%` }}
+            />
+          </div>
+          <div aria-live="polite" aria-atomic="true">
+            <h2>{TUTORIAL[tutorial].title}</h2>
+            <p>{TUTORIAL[tutorial].text}</p>
+          </div>
+          {tutorial === 0 ? (
+            <button className="primary full" onClick={() => setTutorial(1)}>
+              Show me how <ArrowRight size={16} />
+            </button>
+          ) : tutorial === 11 ? (
+            <button className="primary full" onClick={finishTutorial}>
+              Return to my plant <ArrowRight size={16} />
+            </button>
+          ) : (
+            <div className="tutorial-instruction">
+              {TUTORIAL[tutorial].running
+                ? 'Time is running · watch what changes'
+                : 'Time is stopped · follow the glowing control'}
+            </div>
+          )}
+        </section>
       )}
       {toast && (
         <div className="toast" role="status">
