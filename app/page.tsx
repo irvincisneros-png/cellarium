@@ -440,6 +440,7 @@ export default function Game() {
         : s.energy < 10
           ? 'Energy is low. Let respiration replenish it before investing.'
           : null;
+  const failedCell = s.cells.find((c: any) => c.health <= 0) || s;
   const finished = Object.keys(progress).length;
   const canContinue = s.status === 'playing' && s.t > 0;
   return (
@@ -1262,7 +1263,7 @@ export default function Game() {
       {screen === 'game' && s.status === 'won' && !panel && (
         <Modal>
           <span className="eyebrow">CHAPTER COMPLETE</span>
-          <Plant stage={s.level} />
+          <Plant stage={3} />
           <div className="victory-stars" aria-label={`${stars(s)} stars`}>
             {'★'.repeat(stars(s))}
             {'☆'.repeat(3 - stars(s))}
@@ -1314,11 +1315,15 @@ export default function Game() {
           <h2>Let’s find a new balance.</h2>
           <p>
             A leaf cell ran out of{' '}
-            {s.water < 5 ? 'water' : s.sugar < 2 ? 'sugar' : 'usable energy'}.
-            Try{' '}
-            {s.water < 5
+            {failedCell.water < 5
+              ? 'water'
+              : failedCell.sugar < 2
+                ? 'sugar'
+                : 'usable energy'}
+            . Try{' '}
+            {failedCell.water < 5
               ? 'Conserve priority and an early membrane development.'
-              : s.sugar < 2
+              : failedCell.sugar < 2
                 ? 'developing chloroplast capacity and saving sugar before night.'
                 : 'developing mitochondria and leaving energy in reserve.'}
           </p>

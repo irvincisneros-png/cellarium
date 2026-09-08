@@ -10,8 +10,12 @@
 
 ## Browser verification
 
-Verified during development: campaign entry, briefing, 3D rendering, plant/cell view switching, selecting structures, development actions, resource priorities, growth initiation, weather choices, save recovery after reload. Final deployed checks are recorded below after publishing.
+Verified during development: campaign entry, briefing, 3D rendering, plant/cell view switching, selecting structures, development actions, resource priorities, growth initiation, weather choices, save recovery after reload. A complete first-chapter browser playthrough reached 360 points, 100% health and three stars in 8:06 game time; the next-chapter briefing opened successfully. Responsive checks at 390px confirmed no horizontal overflow and access to all controls through vertical scrolling. Both audio switches were toggled, read back and restored. The optional read-only inspection tool returned game state and rejected invalid input.
 
 ## Limits
 
 Simulation playthroughs are deterministic automated strategies, not a classroom efficacy study. Audio scheduling and mute behaviour are checked programmatically; perceived sound quality remains subjective. The art is illustrative and time/resource units are intentionally simplified.
+
+## Published checks
+
+GitHub Actions passed installation, typecheck, lint, tests, build and Pages deployment. The live root, JavaScript, CSS and both ImageGen backgrounds returned HTTP 200 from the repository subpath.
