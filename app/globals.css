@@ -745,6 +745,9 @@ footer {
   color: #b8cdb0;
   padding: 8px 0;
 }
+a.text-button {
+  text-decoration: none;
+}
 .text-button span {
   font-size: 10px;
   color: #859b91;

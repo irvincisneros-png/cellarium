@@ -1016,6 +1016,12 @@ export default function Game() {
               <button className="text-button" onClick={() => setPanel('guide')}>
                 How to play <ArrowUpRight size={15} />
               </button>
+              <a
+                className="text-button"
+                href="https://irvincisneros-png.github.io/"
+              >
+                ← Learning Hub
+              </a>
             </div>
             <div className="campaign-progress">
               <span>{finished} / 4 scenarios complete</span>
